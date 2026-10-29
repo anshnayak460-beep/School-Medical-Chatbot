@@ -1,116 +1,822 @@
 
-export default {
-  async fetch(request, env) {
-    const corsHeaders = {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
-      "Content-Type": "application/json"
-    };
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#08152b">
+  <title>MediSchool AI - Smart School Medical Chatbot</title>
 
-    const json = (data, status = 200) =>
-      new Response(JSON.stringify(data), {
-        status,
-        headers: corsHeaders
-      });
-
-    if (request.method === "OPTIONS") {
-      return new Response(null, {
-        status: 204,
-        headers: corsHeaders
-      });
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
 
-    if (request.method !== "POST") {
-      return json({ error: "Use POST to chat with MediSchool AI." }, 405);
+    :root {
+      --bg: #08152b;
+      --sidebar: #0b1c34;
+      --card: #10243d;
+      --border: #243b55;
+      --text: #f1f7ff;
+      --muted: #9cb0c9;
+      --cyan: #67e8f9;
+      --green: #86efac;
     }
 
-    if (!env.GROQ_API_KEY) {
-      return json({ error: "GROQ_API_KEY secret is not configured." }, 500);
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
     }
+
+    button, textarea {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .app {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: 255px;
+      background: var(--sidebar);
+      border-right: 1px solid var(--border);
+      padding: 24px 17px;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+      flex-shrink: 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      height: 48px;
+      width: 48px;
+      border-radius: 15px;
+      background: #153c51;
+      display: grid;
+      place-items: center;
+      color: var(--cyan);
+      font-size: 27px;
+    }
+
+    .brand h1 {
+      font-size: 19px;
+    }
+
+    .brand p {
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 5px;
+    }
+
+    .new-chat {
+      padding: 13px;
+      color: white;
+      background: #15304b;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      text-align: left;
+    }
+
+    .section-label {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 12px;
+    }
+
+    .side-link {
+      display: block;
+      color: #d2deed;
+      font-size: 13px;
+      padding: 12px 10px;
+      border-radius: 10px;
+    }
+
+    .side-link:hover {
+      background: var(--card);
+    }
+
+    .safety-card {
+      margin-top: auto;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 15px;
+    }
+
+    .safety-card h3 {
+      font-size: 13px;
+      margin-bottom: 9px;
+    }
+
+    .safety-card p {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    /* MAIN AREA */
+    .main {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      min-height: 70px;
+      padding: 15px 28px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .topbar h2 {
+      font-size: 15px;
+    }
+
+    .status {
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-dot {
+      height: 8px;
+      width: 8px;
+      border-radius: 50%;
+      background: var(--green);
+    }
+
+    .content {
+      width: 100%;
+      max-width: 1000px;
+      padding: 32px 24px 20px;
+      margin: 0 auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* WELCOME */
+    .welcome {
+      text-align: center;
+      margin: 12px 0 30px;
+    }
+
+    .hero-icon {
+      width: 75px;
+      height: 75px;
+      border-radius: 23px;
+      background: linear-gradient(135deg, #143e54, #1c3453);
+      border: 1px solid #2b526c;
+      display: grid;
+      place-items: center;
+      margin: 0 auto 22px;
+      font-size: 36px;
+    }
+
+    .welcome h2 {
+      font-size: clamp(26px, 4vw, 38px);
+      margin-bottom: 14px;
+      line-height: 1.25;
+    }
+
+    .gradient {
+      color: var(--cyan);
+    }
+
+    .welcome p {
+      color: var(--muted);
+      max-width: 610px;
+      margin: 0 auto;
+      font-size: 14px;
+      line-height: 1.9;
+    }
+
+    /* FEATURE CARDS */
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 13px;
+      margin-bottom: 30px;
+    }
+
+    .feature {
+      padding: 17px 13px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 15px;
+      transition: 0.2s;
+    }
+
+    .feature:hover {
+      transform: translateY(-3px);
+      border-color: #43849a;
+    }
+
+    .feature-icon {
+      font-size: 25px;
+      margin-bottom: 13px;
+    }
+
+    .feature h3 {
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .feature p {
+      font-size: 11px;
+      line-height: 1.7;
+      color: var(--muted);
+    }
+
+    /* CHAT MESSAGES */
+    .chat {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      margin-bottom: 22px;
+    }
+
+    .message {
+      display: flex;
+      align-items: flex-start;
+      gap: 11px;
+    }
+
+    .message.user {
+      flex-direction: row-reverse;
+    }
+
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      background: #153b4e;
+      color: var(--cyan);
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+      font-size: 19px;
+    }
+
+    .user .avatar {
+      background: #30365d;
+      color: #d5caff;
+    }
+
+    .message-body {
+      max-width: 85%;
+      min-width: 0;
+    }
+
+    .message-name {
+      font-size: 11px;
+      color: var(--muted);
+      margin: 0 3px 7px;
+    }
+
+    .user .message-name {
+      text-align: right;
+    }
+
+    .bubble {
+      background: var(--card);
+      border: 1px solid var(--border);
+      padding: 14px 16px;
+      border-radius: 4px 15px 15px 15px;
+      font-size: 14px;
+      line-height: 1.8;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+    }
+
+    .user .bubble {
+      background: #17314c;
+      border-radius: 15px 4px 15px 15px;
+    }
+
+    .typing {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    /* QUICK QUESTIONS */
+    .quick-title {
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 11px;
+    }
+
+    .quick-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 15px;
+    }
+
+    .quick-btn {
+      padding: 10px 13px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 30px;
+      color: #dceaff;
+      font-size: 12px;
+      transition: 0.2s;
+    }
+
+    .quick-btn:hover {
+      border-color: var(--cyan);
+      color: var(--cyan);
+    }
+
+    /* CHAT INPUT */
+    .composer {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+      padding: 11px;
+      background: var(--card);
+      border: 1px solid #304c68;
+      border-radius: 17px;
+    }
+
+    .composer:focus-within {
+      border-color: #5bb9ca;
+    }
+
+    textarea {
+      flex: 1;
+      min-width: 0;
+      min-height: 44px;
+      max-height: 150px;
+      resize: none;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: white;
+      padding: 12px 6px;
+      line-height: 1.5;
+    }
+
+    textarea::placeholder {
+      color: #8ca2bc;
+    }
+
+    .send-btn {
+      height: 44px;
+      width: 46px;
+      border: none;
+      border-radius: 12px;
+      background: var(--cyan);
+      color: #062033;
+      font-size: 22px;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+
+    .send-btn:hover {
+      background: #a5f3fc;
+    }
+
+    .send-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .disclaimer {
+      text-align: center;
+      font-size: 11px;
+      line-height: 1.8;
+      color: #879bb4;
+      padding: 12px 5px;
+    }
+
+    .footer {
+      border-top: 1px solid var(--border);
+      text-align: center;
+      padding: 16px;
+      font-size: 11px;
+      color: #8499b2;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 900px) {
+      .sidebar {
+        width: 220px;
+      }
+
+      .feature-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 650px) {
+      .sidebar {
+        display: none;
+      }
+
+      .topbar {
+        padding: 15px;
+      }
+
+      .content {
+        padding: 25px 14px 15px;
+      }
+
+      .welcome {
+        margin-top: 10px;
+      }
+
+      .feature-grid {
+        gap: 9px;
+      }
+
+      .feature {
+        padding: 13px 10px;
+      }
+
+      .message-body {
+        max-width: 88%;
+      }
+
+      .bubble {
+        font-size: 13px;
+      }
+
+      .quick-btn {
+        font-size: 11px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-icon">✚</div>
+      <div>
+        <h1>MediSchool AI</h1>
+        <p>Smart School Health</p>
+      </div>
+    </div>
+
+    <button class="new-chat" id="newChat">＋ &nbsp; New Chat</button>
+
+    <div>
+      <p class="section-label">Health Services</p>
+      <div class="side-link">🌡️ &nbsp; Symptoms Information</div>
+      <div class="side-link">🩹 &nbsp; First Aid Guide</div>
+      <div class="side-link">🥗 &nbsp; Healthy Nutrition</div>
+      <div class="side-link">💚 &nbsp; Student Wellbeing</div>
+      <div class="side-link">🧼 &nbsp; Hygiene Tips</div>
+    </div>
+
+    <div class="safety-card">
+      <h3>🛡️ Student Safety</h3>
+      <p>
+        This AI gives general educational guidance only.
+        Contact a school nurse, trusted adult or doctor for
+        medical concerns. In India, call 112 for emergencies.
+      </p>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <header class="topbar">
+      <h2>Smart School Medical Chatbot</h2>
+      <div class="status">
+        <span class="status-dot"></span>
+        <span id="statusText">Ready to chat</span>
+      </div>
+    </header>
+
+    <section class="content">
+
+      <div class="welcome" id="welcome">
+        <div class="hero-icon">🩺</div>
+        <h2>Your Health, <span class="gradient">Our Priority</span></h2>
+        <p>
+          Welcome to MediSchool AI! Ask questions about general
+          health, first aid, nutrition, hygiene and healthy habits.
+          Your school health assistant is here to help.
+        </p>
+      </div>
+
+      <div class="feature-grid" id="features">
+
+        <div class="feature">
+          <div class="feature-icon">🌡️</div>
+          <h3>Symptoms Guide</h3>
+          <p>Learn about common symptoms and when to seek help.</p>
+        </div>
+
+        <div class="feature">
+          <div class="feature-icon">🩹</div>
+          <h3>First Aid</h3>
+          <p>Understand basic first-aid safety steps.</p>
+        </div>
+
+        <div class="feature">
+          <div class="feature-icon">🥗</div>
+          <h3>Nutrition</h3>
+          <p>Learn about healthy food, hydration and nutrition.</p>
+        </div>
+
+        <div class="feature">
+          <div class="feature-icon">💚</div>
+          <h3>Wellbeing</h3>
+          <p>Explore sleep, stress management and healthy habits.</p>
+        </div>
+
+      </div>
+
+      <div class="chat" id="chat" aria-live="polite">
+        <div class="message">
+          <div class="avatar">✚</div>
+          <div class="message-body">
+            <div class="message-name">MediSchool AI · Assistant</div>
+            <div class="bubble">Namaste! 👋
+
+Main MediSchool AI hoon, aapka school health assistant.
+
+Aap mujhse first aid, healthy food, hygiene aur general health ke baare mein pooch sakte hain.
+
+Aaj main aapki kya help kar sakta hoon?</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="composer-area">
+
+        <p class="quick-title" id="quickTitle">Try asking</p>
+
+        <div class="quick-list" id="quickList">
+          <button class="quick-btn">Mujhe headache hai, kya karun?</button>
+          <button class="quick-btn">Explain basic first aid</button>
+          <button class="quick-btn">How can I stay healthy?</button>
+          <button class="quick-btn">How to manage school stress?</button>
+        </div>
+
+        <form class="composer" id="chatForm">
+          <textarea
+            id="messageInput"
+            placeholder="Apna health question yahan likhein..."
+            rows="1"
+            maxlength="2000"
+            aria-label="Enter your question"
+          ></textarea>
+
+          <button class="send-btn" id="sendBtn" type="submit"
+            aria-label="Send message">➤</button>
+        </form>
+
+        <div class="disclaimer">
+          ⚕️ This chatbot provides general educational information,
+          not a medical diagnosis. Do not share names, addresses,
+          passwords or private medical records. For urgent concerns,
+          tell a trusted adult and contact emergency services.
+        </div>
+
+      </div>
+    </section>
+
+    <footer class="footer">
+      © 2026 MediSchool AI | Smart School Medical Chatbot
+    </footer>
+
+  </main>
+</div>
+
+<script>
+  /*
+    IMPORTANT:
+    Deploy your Cloudflare Worker first.
+    Paste the deployed Worker URL below.
+    Never put your Groq API key in this HTML file.
+  */
+
+  const WORKER_URL = "PASTE_YOUR_CLOUDFLARE_WORKER_URL_HERE";
+
+  const chat = document.getElementById("chat");
+  const input = document.getElementById("messageInput");
+  const form = document.getElementById("chatForm");
+  const sendBtn = document.getElementById("sendBtn");
+  const statusText = document.getElementById("statusText");
+
+  const welcome = document.getElementById("welcome");
+  const features = document.getElementById("features");
+  const quickList = document.getElementById("quickList");
+  const quickTitle = document.getElementById("quickTitle");
+
+  let messages = [];
+  let busy = false;
+
+  function addMessage(role, text) {
+    const message = document.createElement("div");
+    message.className = "message " +
+      (role === "user" ? "user" : "assistant");
+
+    const avatar = document.createElement("div");
+    avatar.className = "avatar";
+    avatar.textContent = role === "user" ? "☺" : "✚";
+
+    const body = document.createElement("div");
+    body.className = "message-body";
+
+    const name = document.createElement("div");
+    name.className = "message-name";
+    name.textContent = role === "user"
+      ? "You"
+      : "MediSchool AI · Assistant";
+
+    const bubble = document.createElement("div");
+    bubble.className = "bubble";
+    bubble.textContent = text;
+
+    body.appendChild(name);
+    body.appendChild(bubble);
+    message.appendChild(avatar);
+    message.appendChild(body);
+    chat.appendChild(message);
+
+    message.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest"
+    });
+
+    return message;
+  }
+
+  function setBusy(value) {
+    busy = value;
+    sendBtn.disabled = value;
+    input.disabled = value;
+    statusText.textContent = value
+      ? "AI is thinking..."
+      : "Ready to chat";
+  }
+
+  async function sendMessage(rawText) {
+    const text = rawText.trim();
+
+    if (!text || busy) return;
+
+    if (
+      WORKER_URL.includes("PASTE_YOUR") ||
+      !WORKER_URL.startsWith("https://")
+    ) {
+      addMessage(
+        "assistant",
+        "Configuration required: Please deploy your Cloudflare Worker and add its URL to the WORKER_URL variable in index.html. Keep your Groq API key secret in Cloudflare Worker settings."
+      );
+      return;
+    }
+
+    welcome.classList.add("hidden");
+    features.classList.add("hidden");
+    quickList.classList.add("hidden");
+    quickTitle.classList.add("hidden");
+
+    addMessage("user", text);
+    input.value = "";
+    input.style.height = "44px";
+
+    messages.push({
+      role: "user",
+      content: text
+    });
+
+    messages = messages.slice(-16);
+
+    const typing = addMessage(
+      "assistant",
+      "MediSchool AI is thinking..."
+    );
+
+    setBusy(true);
 
     try {
-      const body = await request.json();
-      if (!Array.isArray(body.messages) || body.messages.length === 0) {
-        return json({ error: "Please send a message." }, 400);
+      const response = await fetch(WORKER_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          messages: messages
+        })
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(
+          data.error || "Request failed: " + response.status
+        );
       }
 
-      const messages = body.messages.slice(-16);
-      const allowed = messages.every(m =>
-        m &&
-        ["user", "assistant"].includes(m.role) &&
-        typeof m.content === "string" &&
-        m.content.length <= 4000
-      );
-
-      if (!allowed) {
-        return json({ error: "Invalid message format." }, 400);
+      if (
+        typeof data.reply !== "string" ||
+        !data.reply.trim()
+      ) {
+        throw new Error("AI returned an empty response.");
       }
 
-      const systemPrompt = `
-You are MediSchool AI, a school health education assistant.
-Help students, teachers and parents with general health education,
-hygiene, nutrition, sleep, wellbeing and basic first-aid information.
+      typing.querySelector(".bubble").textContent = data.reply;
 
-Rules:
-- Never claim to diagnose a disease or replace a doctor.
-- Use clear, kind, age-appropriate language.
-- Answer in the language the user uses, including Hindi or Hinglish.
-- Do not prescribe medicines or dosages to children.
-- Encourage a parent/guardian, school nurse or healthcare professional
-  for symptoms, injuries or medical decisions.
-- For serious symptoms such as difficulty breathing, unconsciousness,
-  severe bleeding, seizures or a severe allergic reaction, advise
-  immediate adult help and local emergency services.
-- For self-harm or immediate danger, encourage immediate trusted-adult
-  support and emergency help.
-- Ask users not to share names, addresses or other private information.
-- Give cautious, general first-aid advice only.
-- Be concise and easy to understand.
-- This chatbot is educational and is not an emergency service.
-`;
+      messages.push({
+        role: "assistant",
+        content: data.reply
+      });
 
-      const upstream = await fetch(
-        "https://api.groq.com/openai/v1/chat/completions",
-        {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${env.GROQ_API_KEY}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            model: "llama-3.3-70b-versatile",
-            messages: [
-              { role: "system", content: systemPrompt },
-              ...messages
-            ],
-            temperature: 0.3,
-            max_tokens: 700
-          })
-        }
-      );
+      messages = messages.slice(-16);
 
-      if (!upstream.ok) {
-        const details = await upstream.text();
-        console.error("Groq API error:", upstream.status, details);
-        return json({
-          error: upstream.status === 429
-            ? "AI usage limit reached. Please try again later."
-            : "The AI provider request failed. Check Worker logs and Groq settings."
-        }, 502);
-      }
-
-      const result = await upstream.json();
-      const reply = result.choices?.[0]?.message?.content;
-
-      if (!reply) {
-        return json({ error: "No answer was returned by the AI." }, 502);
-      }
-
-      return json({ reply });
     } catch (error) {
-      console.error("Worker error:", error);
-      return json({ error: "Invalid request or server error." }, 500);
+      typing.querySelector(".bubble").textContent =
+        "Sorry! AI se connection nahi ho paya.\n\n" +
+        "Please check your Worker URL, Groq API secret, internet connection and Cloudflare Worker logs.\n\n" +
+        "Details: " + (error.message || "Unknown error");
+
+      // Remove the failed user message from conversation context.
+      messages.pop();
+
+    } finally {
+      setBusy(false);
+      input.focus();
     }
   }
-};
+
+  form.addEventListener("submit", function(event) {
+    event.preventDefault();
+    sendMessage(input.value);
+  });
+
+  input.addEventListener("input", function() {
+    input.style.height = "44px";
+    input.style.height =
+      Math.min(input.scrollHeight, 150) + "px";
+  });
+
+  input.addEventListener("keydown", function(event) {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      form.requestSubmit();
+    }
+  });
+
+  quickList.querySelectorAll(".quick-btn").forEach(function(button) {
+    button.addEventListener("click", function() {
+      sendMessage(button.textContent);
+    });
+  });
+
+  document.getElementById("newChat").addEventListener("click", function() {
+    if (busy) return;
+
+    messages = [];
+    chat.replaceChildren();
+
+    addMessage(
+      "assistant",
+      "Namaste! 👋 Main MediSchool AI hoon. Aap general health, first aid, nutrition aur hygiene ke baare mein kya poochna chahte hain?"
+    );
+
+    welcome.classList.remove("hidden");
+    features.classList.remove("hidden");
+    quickList.classList.remove("hidden");
+    quickTitle.classList.remove("hidden");
+
+    input.value = "";
+    input.focus();
+  });
+</script>
+</body>
+</html>
