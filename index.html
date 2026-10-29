@@ -1,0 +1,584 @@
+
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#087f8c">
+  <title>SchoolCare AI | Medical Chatbot</title>
+
+  <style>
+    :root {
+      --primary: #087f8c;
+      --primary-dark: #056570;
+      --bg: #f1f8fa;
+      --text: #183344;
+      --muted: #637786;
+      --border: #dfebef;
+      --white: #ffffff;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    button, input, textarea { font: inherit; }
+
+    .header {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 15px 5%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      font-size: 20px;
+      font-weight: 800;
+    }
+
+    .brand-icon {
+      width: 43px;
+      height: 43px;
+      display: grid;
+      place-items: center;
+      border-radius: 13px;
+      color: white;
+      background: var(--primary);
+      font-size: 25px;
+    }
+
+    .header small { color: var(--muted); }
+
+    .status {
+      color: #16804a;
+      background: #e8f8ef;
+      padding: 9px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+
+    .container {
+      max-width: 1050px;
+      margin: 28px auto;
+      padding: 0 16px;
+    }
+
+    .hero { margin-bottom: 20px; }
+
+    .hero h1 {
+      margin: 0 0 10px;
+      font-size: clamp(25px, 4vw, 37px);
+      letter-spacing: -1px;
+    }
+
+    .hero p {
+      color: var(--muted);
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 270px minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .sidebar, .chat-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 19px;
+      overflow: hidden;
+    }
+
+    .sidebar { padding: 19px; }
+
+    .sidebar h3 { margin: 0 0 13px; }
+
+    .quick {
+      display: block;
+      width: 100%;
+      text-align: left;
+      background: #f7fbfc;
+      border: 1px solid var(--border);
+      padding: 12px;
+      margin: 9px 0;
+      border-radius: 11px;
+      cursor: pointer;
+      color: var(--text);
+      line-height: 1.4;
+    }
+
+    .quick:hover {
+      border-color: var(--primary);
+      background: #eefafa;
+    }
+
+    .notice {
+      margin-top: 20px;
+      padding: 13px;
+      border-radius: 12px;
+      background: #fff5e7;
+      color: #79470d;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .chat-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      gap: 10px;
+    }
+
+    .bot-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .bot-avatar {
+      display: grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: #e4f7f6;
+      font-size: 24px;
+    }
+
+    .bot-info strong { display: block; margin-bottom: 4px; }
+    .bot-info small { color: var(--muted); }
+
+    .clear-btn {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 9px 11px;
+      cursor: pointer;
+      color: var(--muted);
+    }
+
+    .messages {
+      height: 420px;
+      overflow-y: auto;
+      padding: 18px;
+      background: #fbfdfd;
+    }
+
+    .message {
+      display: flex;
+      margin: 0 0 17px;
+      gap: 9px;
+      align-items: flex-start;
+    }
+
+    .message.user { justify-content: flex-end; }
+
+    .bubble {
+      max-width: 86%;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      padding: 12px 14px;
+      line-height: 1.6;
+      font-size: 14px;
+      border-radius: 14px;
+      background: #eaf3f7;
+    }
+
+    .message.user .bubble {
+      color: white;
+      background: var(--primary);
+      border-bottom-right-radius: 4px;
+    }
+
+    .message.bot .bubble { border-bottom-left-radius: 4px; }
+
+    .message.error .bubble {
+      background: #fff0ed;
+      color: #8a2d20;
+    }
+
+    .chat-bottom {
+      padding: 15px;
+      border-top: 1px solid var(--border);
+    }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+
+    #question {
+      flex: 1;
+      min-width: 0;
+      resize: vertical;
+      min-height: 47px;
+      max-height: 130px;
+      border: 1px solid #cfdee4;
+      border-radius: 12px;
+      padding: 13px;
+      outline: none;
+    }
+
+    #question:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px #087f8c18;
+    }
+
+    #sendBtn {
+      min-height: 47px;
+      border: 0;
+      border-radius: 12px;
+      background: var(--primary);
+      color: white;
+      padding: 0 18px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #sendBtn:hover { background: var(--primary-dark); }
+    #sendBtn:disabled { opacity: .6; cursor: wait; }
+
+    .disclaimer {
+      margin: 12px 0 0;
+      font-size: 11px;
+      line-height: 1.6;
+      color: var(--muted);
+    }
+
+    .footer {
+      text-align: center;
+      padding: 24px 12px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    @media (max-width: 760px) {
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { order: 2; }
+      .chat-card { order: 1; }
+      .messages { height: 400px; }
+      .container { margin-top: 20px; }
+      .header { padding: 12px 4%; }
+      .brand { font-size: 17px; }
+      .status { font-size: 10px; padding: 8px; }
+    }
+
+    @media (max-width: 400px) {
+      .input-row { gap: 6px; }
+      #sendBtn { padding: 0 12px; }
+      .messages { padding: 12px; }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="header">
+    <div class="brand">
+      <div class="brand-icon">✚</div>
+      <div>
+        SchoolCare AI
+        <div><small>Student Health Assistant</small></div>
+      </div>
+    </div>
+    <div class="status">● AI Assistant</div>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <h1>Your School Health Companion 💙</h1>
+      <p>
+        बच्चों की सामान्य स्वास्थ्य समस्याओं, स्वच्छता, पोषण और
+        स्वस्थ आदतों के बारे में जानकारी प्राप्त करें।
+      </p>
+    </section>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <h3>💡 Quick Questions</h3>
+
+        <button class="quick" data-question="मुझे बुखार है, मुझे क्या करना चाहिए?">
+          🌡️ बुखार होने पर क्या करें?
+        </button>
+
+        <button class="quick" data-question="What should I do if I have a headache?">
+          🤕 Headache
+        </button>
+
+        <button class="quick" data-question="स्कूल में स्वस्थ रहने के लिए क्या खाना चाहिए?">
+          🥗 Healthy food
+        </button>
+
+        <button class="quick" data-question="How can students prevent dehydration?">
+          💧 Dehydration
+        </button>
+
+        <button class="quick" data-question="मुझे चोट लग गई है, मुझे क्या करना चाहिए?">
+          🩹 छोटी चोट
+        </button>
+
+        <button class="quick" data-question="स्कूल में मानसिक तनाव कम कैसे करें?">
+          🧠 Mental wellness
+        </button>
+
+        <div class="notice">
+          <strong>⚠️ Medical Safety</strong><br>
+          यह AI डॉक्टर नहीं है। गंभीर लक्षण होने पर तुरंत
+          माता-पिता, स्कूल नर्स या शिक्षक को बताएं।
+          आपातकाल में भारत में 112 पर संपर्क करें।
+        </div>
+      </aside>
+
+      <section class="chat-card">
+        <div class="chat-top">
+          <div class="bot-info">
+            <div class="bot-avatar">🩺</div>
+            <div>
+              <strong>SchoolCare Assistant</strong>
+              <small id="statusText">सामान्य स्वास्थ्य जानकारी</small>
+            </div>
+          </div>
+          <button id="clearBtn" class="clear-btn">Clear</button>
+        </div>
+
+        <div
+          id="messages"
+          class="messages"
+          role="log"
+          aria-live="polite"
+          aria-label="Chat messages"
+        >
+          <div class="message bot">
+            <div class="bubble">नमस्ते! 👋 मैं SchoolCare AI हूँ।
+
+मैं सामान्य स्वास्थ्य, पोषण, स्वच्छता और स्कूल में स्वस्थ रहने के बारे में जानकारी दे सकता हूँ।
+
+आप हिंदी या English में अपना सवाल पूछ सकते हैं।
+
+आपको क्या जानना है?</div>
+          </div>
+        </div>
+
+        <div class="chat-bottom">
+          <form id="chatForm">
+            <div class="input-row">
+              <textarea
+                id="question"
+                placeholder="अपना स्वास्थ्य संबंधी सवाल लिखें..."
+                aria-label="अपना सवाल लिखें"
+                maxlength="1500"
+                required
+              ></textarea>
+              <button id="sendBtn" type="submit">Send ➤</button>
+            </div>
+          </form>
+          <p class="disclaimer">
+            जानकारी केवल शिक्षा के लिए है, चिकित्सा जाँच या डॉक्टर की
+            सलाह का विकल्प नहीं। अपना नाम, फोन नंबर, पता या निजी मेडिकल
+            रिकॉर्ड साझा न करें।
+          </p>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="footer">
+    © 2026 SchoolCare AI · School Health Education Project
+  </footer>
+
+  <script>
+    // IMPORTANT:
+    // Deploy your Cloudflare Worker first, then paste its URL below.
+    const WORKER_URL = "PASTE_YOUR_CLOUDFLARE_WORKER_URL_HERE";
+
+    const messagesEl = document.getElementById("messages");
+    const form = document.getElementById("chatForm");
+    const input = document.getElementById("question");
+    const sendBtn = document.getElementById("sendBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const statusText = document.getElementById("statusText");
+
+    let history = [];
+    let busy = false;
+
+    const systemPrompt = `
+You are SchoolCare AI, a school health education assistant.
+Help students and school staff with general health education,
+hygiene, nutrition, hydration, sleep, exercise, and basic first aid.
+
+Reply in the same language as the user, especially Hindi or English.
+Use simple, calm, age-appropriate language.
+Keep answers clear and concise.
+
+SAFETY RULES:
+- You are not a doctor and cannot diagnose a disease.
+- Never claim certainty about a diagnosis or prescribe medication.
+- Do not recommend medicine doses, antibiotics, or stopping prescriptions.
+- Encourage students to tell a parent, guardian, school nurse, or teacher.
+- For serious symptoms, recommend urgent in-person medical care.
+- For breathing difficulty, unconsciousness, severe bleeding, seizures,
+  suspected poisoning, or other immediate danger, tell the user to alert
+  an adult immediately and contact local emergency services.
+- For India, 112 is the emergency number.
+- If a student mentions self-harm or immediate danger, encourage them to
+  tell a trusted adult immediately and seek emergency support.
+- Do not ask for full name, address, phone number, school ID, or private
+  medical records.
+- Do not promise that a symptom is harmless.
+- Never delay emergency care in order to continue this conversation.
+- You provide educational information, not a substitute for a clinician.
+`;
+
+    function addMessage(text, sender, error = false) {
+      const row = document.createElement("div");
+      row.className = "message " + sender + (error ? " error" : "");
+
+      const bubble = document.createElement("div");
+      bubble.className = "bubble";
+      bubble.textContent = text;
+
+      row.appendChild(bubble);
+      messagesEl.appendChild(row);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+
+      return row;
+    }
+
+    function showWelcome() {
+      addMessage(
+        "नमस्ते! 👋 मैं SchoolCare AI हूँ।\\n\\n" +
+        "मैं सामान्य स्वास्थ्य, पोषण, स्वच्छता और स्कूल में स्वस्थ रहने के बारे में जानकारी दे सकता हूँ।\\n\\n" +
+        "आप हिंदी या English में अपना सवाल पूछ सकते हैं।\\n\\n" +
+        "आपको क्या जानना है?",
+        "bot"
+      );
+    }
+
+    async function sendQuestion(question) {
+      question = question.trim();
+
+      if (!question || busy) return;
+
+      if (WORKER_URL === "PASTE_YOUR_CLOUDFLARE_WORKER_URL_HERE") {
+        addMessage(
+          "Configuration error: पहले Cloudflare Worker deploy करें और index.html में WORKER_URL सेट करें।",
+          "bot",
+          true
+        );
+        return;
+      }
+
+      if (!/^https:\/\/[a-zA-Z0-9.-]+(?::\d+)?(?:\/.*)?$/.test(WORKER_URL)) {
+        addMessage(
+          "Worker URL सही नहीं है। कृपया अपना deployed HTTPS Worker URL डालें।",
+          "bot",
+          true
+        );
+        return;
+      }
+
+      addMessage(question, "user");
+
+      const nextHistory = [
+        ...history,
+        { role: "user", content: question }
+      ];
+
+      busy = true;
+      sendBtn.disabled = true;
+      input.disabled = true;
+      statusText.textContent = "AI जवाब लिख रहा है...";
+
+      const typing = addMessage("सोच रहा हूँ... 💭", "bot");
+
+      try {
+        const response = await fetch(WORKER_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            messages: nextHistory.slice(-10)
+          })
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(data.error || "Server error (" + response.status + ")");
+        }
+
+        if (typeof data.reply !== "string" || !data.reply.trim()) {
+          throw new Error("AI से खाली जवाब मिला। कृपया दोबारा प्रयास करें।");
+        }
+
+        typing.remove();
+
+        addMessage(data.reply, "bot");
+
+        history = [
+          ...nextHistory,
+          { role: "assistant", content: data.reply }
+        ].slice(-10);
+      } catch (err) {
+        typing.remove();
+
+        console.error("SchoolCare chatbot error:", err);
+
+        addMessage(
+          "माफ़ कीजिए, अभी AI से संपर्क नहीं हो पाया। " +
+          (err.message || "कृपया बाद में प्रयास करें।") +
+          "\\n\\nयदि यह स्वास्थ्य आपातकाल है, तो AI का इंतज़ार न करें। किसी वयस्क को बताएं और आवश्यक चिकित्सा सहायता लें।",
+          "bot",
+          true
+        );
+      } finally {
+        busy = false;
+        sendBtn.disabled = false;
+        input.disabled = false;
+        statusText.textContent = "सामान्य स्वास्थ्य जानकारी";
+        input.focus();
+      }
+    }
+
+    form.addEventListener("submit", function (event) {
+      event.preventDefault();
+
+      const question = input.value;
+      if (!question.trim() || busy) return;
+
+      input.value = "";
+      sendQuestion(question);
+    });
+
+    document.querySelectorAll(".quick").forEach(function (button) {
+      button.addEventListener("click", function () {
+        sendQuestion(button.dataset.question);
+      });
+    });
+
+    clearBtn.addEventListener("click", function () {
+      if (busy) return;
+
+      history = [];
+      messagesEl.replaceChildren();
+      showWelcome();
+    });
+  </script>
+</body>
+</html>
